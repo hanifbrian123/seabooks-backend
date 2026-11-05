@@ -16,3 +16,4 @@ public record TripIncomeRequest(
         BigDecimal amount
 ) {
 }
+

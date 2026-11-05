@@ -99,3 +99,4 @@ public class TripExpense {
         this.updatedAt = LocalDateTime.now();
     }
 }
+

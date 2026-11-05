@@ -13,3 +13,4 @@ public interface TripExpenseRepository extends JpaRepository<TripExpense, Long> 
     @Query("SELECT COALESCE(SUM(e.amount), 0) FROM TripExpense e WHERE e.trip.id = :tripId")
     BigDecimal sumAmountByTripId(@Param("tripId") Long tripId);
 }
+

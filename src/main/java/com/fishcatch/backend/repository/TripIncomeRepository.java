@@ -15,3 +15,4 @@ public interface TripIncomeRepository extends JpaRepository<TripIncome, Long> {
 
     void deleteByTripId(Long tripId);
 }
+

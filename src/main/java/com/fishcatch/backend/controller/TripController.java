@@ -117,3 +117,4 @@ public class TripController {
         tripExpenseService.delete(tripId, expenseId);
     }
 }
+

@@ -69,3 +69,4 @@ public class TripIncome {
         this.updatedAt = LocalDateTime.now();
     }
 }
+
