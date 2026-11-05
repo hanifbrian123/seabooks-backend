@@ -19,7 +19,11 @@ public class JwtService {
     private static final long EXPIRATION_SECONDS = 7 * 24 * 3600L; // 7 days
 
     public String generateToken(User user) {
-        long exp = Instant.now().getEpochSecond() + EXPIRATION_SECONDS;
+        return generateToken(user, EXPIRATION_SECONDS);
+    }
+
+    public String generateToken(User user, long durationSeconds) {
+        long exp = Instant.now().getEpochSecond() + durationSeconds;
         String payload = user.getId() + "|" + exp + "|" + user.getEmail();
         String encodedPayload = Base64.getUrlEncoder().withoutPadding()
                 .encodeToString(payload.getBytes(StandardCharsets.UTF_8));
@@ -75,3 +79,4 @@ public class JwtService {
         }
     }
 }
+

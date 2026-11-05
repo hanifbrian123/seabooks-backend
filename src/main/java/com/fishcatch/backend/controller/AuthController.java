@@ -6,6 +6,7 @@ import com.fishcatch.backend.dto.LoginRequest;
 import com.fishcatch.backend.dto.RegisterRequest;
 import com.fishcatch.backend.model.User;
 import com.fishcatch.backend.service.AuthService;
+import com.fishcatch.backend.service.DemoWorkspaceService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+    private final DemoWorkspaceService demoWorkspaceService;
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
@@ -37,6 +39,18 @@ public class AuthController {
     @PostMapping("/google")
     public AuthResponse googleAuth(@RequestBody GoogleAuthRequest request) {
         return authService.authenticateWithGoogle(request);
+    }
+
+    @PostMapping("/demo")
+    @ResponseStatus(HttpStatus.CREATED)
+    public AuthResponse startDemoSession() {
+        return demoWorkspaceService.createEphemeralDemoSession();
+    }
+
+    @PostMapping("/logout")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void logout() {
+        demoWorkspaceService.logoutAndCleanupIfDemo();
     }
 
     @GetMapping("/me")

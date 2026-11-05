@@ -9,3 +9,4 @@ public record GoogleAuthRequest(
         String avatarUrl
 ) {
 }
+

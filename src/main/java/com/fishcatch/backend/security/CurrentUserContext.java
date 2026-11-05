@@ -36,3 +36,4 @@ public class CurrentUserContext {
         CURRENT_USER_ID.remove();
     }
 }
+

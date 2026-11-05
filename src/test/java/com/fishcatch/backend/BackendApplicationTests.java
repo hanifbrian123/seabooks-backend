@@ -22,14 +22,17 @@ import com.fishcatch.backend.model.VesselStatus;
 import com.fishcatch.backend.security.CurrentUserContext;
 import com.fishcatch.backend.service.AuthService;
 import com.fishcatch.backend.service.CrewMemberService;
+import com.fishcatch.backend.service.DemoWorkspaceService;
 import com.fishcatch.backend.service.KasbonTransactionService;
 import com.fishcatch.backend.service.TripExpenseService;
 import com.fishcatch.backend.service.TripIncomeService;
 import com.fishcatch.backend.service.TripService;
 import com.fishcatch.backend.service.VesselService;
+import com.fishcatch.backend.repository.UserRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +43,12 @@ class BackendApplicationTests {
 
     @Autowired
     private AuthService authService;
+
+    @Autowired
+    private DemoWorkspaceService demoWorkspaceService;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     private CurrentUserContext currentUserContext;
@@ -196,6 +205,24 @@ class BackendApplicationTests {
                 "password123"
         ));
         currentUserContext.setCurrentUserId(userB.user().getId());
+        assertThat(vesselService.findAll()).isEmpty();
+        assertThat(crewMemberService.findAll()).isEmpty();
+        assertThat(tripService.findAll()).isEmpty();
+        assertThat(kasbonService.findAll(null)).isEmpty();
+
+        // 11. Verify Ephemeral Demo Workspace creation & complete cleanup on logout
+        AuthResponse demoAuth = demoWorkspaceService.createEphemeralDemoSession();
+        Long demoUserId = demoAuth.user().getId();
+        assertThat(demoAuth.user().getIsDemo()).isTrue();
+
+        currentUserContext.setCurrentUserId(demoUserId);
+        assertThat(vesselService.findAll()).hasSize(2);
+        assertThat(crewMemberService.findAll()).hasSize(3);
+        assertThat(tripService.findAll()).hasSize(1);
+        assertThat(kasbonService.findAll(null)).isNotEmpty();
+
+        demoWorkspaceService.logoutAndCleanupIfDemo();
+        assertThat(userRepository.findById(demoUserId)).isEmpty();
         assertThat(vesselService.findAll()).isEmpty();
         assertThat(crewMemberService.findAll()).isEmpty();
         assertThat(tripService.findAll()).isEmpty();

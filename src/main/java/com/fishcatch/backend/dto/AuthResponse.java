@@ -7,3 +7,4 @@ public record AuthResponse(
         User user
 ) {
 }
+

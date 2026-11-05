@@ -45,6 +45,13 @@ public class User {
     @Column(name = "avatar_url")
     private String avatarUrl;
 
+    @Column(name = "is_demo", columnDefinition = "boolean default false")
+    @Builder.Default
+    private Boolean isDemo = false;
+
+    @Column(name = "demo_expires_at")
+    private LocalDateTime demoExpiresAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -56,6 +63,9 @@ public class User {
         LocalDateTime now = LocalDateTime.now();
         this.createdAt = now;
         this.updatedAt = now;
+        if (this.isDemo == null) {
+            this.isDemo = false;
+        }
     }
 
     @PreUpdate
@@ -63,3 +73,4 @@ public class User {
         this.updatedAt = LocalDateTime.now();
     }
 }
+

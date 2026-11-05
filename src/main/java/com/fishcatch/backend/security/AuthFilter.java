@@ -32,6 +32,7 @@ public class AuthFilter extends OncePerRequestFilter {
                 || path.startsWith("/api/auth/login")
                 || path.startsWith("/api/auth/register")
                 || path.startsWith("/api/auth/google")
+                || path.startsWith("/api/auth/demo")
                 || path.startsWith("/api/health")) {
             filterChain.doFilter(request, response);
             return;
@@ -64,3 +65,4 @@ public class AuthFilter extends OncePerRequestFilter {
         response.getWriter().write("{\"status\":401,\"message\":\"" + message + "\"}");
     }
 }
+
