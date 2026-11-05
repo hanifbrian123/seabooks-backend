@@ -6,10 +6,12 @@ import com.fishcatch.backend.exception.ResourceNotFoundException;
 import com.fishcatch.backend.model.Trip;
 import com.fishcatch.backend.model.TripExpense;
 import com.fishcatch.backend.model.TripStatus;
+import com.fishcatch.backend.model.User;
 import com.fishcatch.backend.model.Vessel;
 import com.fishcatch.backend.repository.TripExpenseRepository;
 import com.fishcatch.backend.repository.TripIncomeRepository;
 import com.fishcatch.backend.repository.TripRepository;
+import com.fishcatch.backend.security.CurrentUserContext;
 import java.math.BigDecimal;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -25,10 +27,12 @@ public class TripService {
     private final TripIncomeRepository tripIncomeRepository;
     private final TripExpenseRepository tripExpenseRepository;
     private final KasbonTransactionService kasbonTransactionService;
+    private final CurrentUserContext currentUserContext;
 
     @Transactional(readOnly = true)
     public List<TripResponse> findAll() {
-        return tripRepository.findAllByOrderByDepartureDateDescIdDesc()
+        Long userId = currentUserContext.getCurrentUserId();
+        return tripRepository.findByUserIdOrderByDepartureDateDescIdDesc(userId)
                 .stream()
                 .map(this::toResponse)
                 .toList();
@@ -42,15 +46,18 @@ public class TripService {
 
     @Transactional(readOnly = true)
     public Trip getTripEntity(Long id) {
-        return tripRepository.findById(id)
+        Long userId = currentUserContext.getCurrentUserId();
+        return tripRepository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Trip not found with id: " + id));
     }
 
     @Transactional
     public TripResponse create(TripRequest request) {
         validateDates(request);
+        User currentUser = currentUserContext.getCurrentUser();
         Vessel vessel = vesselService.findById(request.vesselId());
         Trip trip = Trip.builder()
+                .user(currentUser)
                 .vessel(vessel)
                 .departureDate(request.departureDate())
                 .estimatedReturnDate(request.estimatedReturnDate())
@@ -121,4 +128,3 @@ public class TripService {
         );
     }
 }
-

@@ -6,10 +6,16 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface KasbonTransactionRepository extends JpaRepository<KasbonTransaction, Long> {
-    List<KasbonTransaction> findAllByOrderByTransactionDateDescIdDesc();
+    List<KasbonTransaction> findByUserIdOrderByTransactionDateDescIdDesc(Long userId);
 
-    List<KasbonTransaction> findByCrewMemberIdOrderByTransactionDateDescIdDesc(Long crewMemberId);
+    List<KasbonTransaction> findByUserIdAndCrewMemberIdOrderByTransactionDateDescIdDesc(
+            Long userId,
+            Long crewMemberId
+    );
+
+    Optional<KasbonTransaction> findByIdAndUserId(Long id, Long userId);
 
     Optional<KasbonTransaction> findByTripExpenseId(Long tripExpenseId);
-}
 
+    List<KasbonTransaction> findByUserIsNull();
+}

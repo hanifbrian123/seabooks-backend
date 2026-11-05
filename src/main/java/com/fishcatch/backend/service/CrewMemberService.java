@@ -3,7 +3,9 @@ package com.fishcatch.backend.service;
 import com.fishcatch.backend.dto.CrewMemberRequest;
 import com.fishcatch.backend.exception.ResourceNotFoundException;
 import com.fishcatch.backend.model.CrewMember;
+import com.fishcatch.backend.model.User;
 import com.fishcatch.backend.repository.CrewMemberRepository;
+import com.fishcatch.backend.security.CurrentUserContext;
 import java.math.BigDecimal;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -15,26 +17,32 @@ import org.springframework.transaction.annotation.Transactional;
 public class CrewMemberService {
 
     private final CrewMemberRepository crewMemberRepository;
+    private final CurrentUserContext currentUserContext;
 
     @Transactional(readOnly = true)
     public List<CrewMember> findAll() {
-        return crewMemberRepository.findAllByOrderByNameAsc();
+        Long userId = currentUserContext.getCurrentUserId();
+        return crewMemberRepository.findByUserIdOrderByNameAsc(userId);
     }
 
     @Transactional(readOnly = true)
     public List<CrewMember> findWithActiveDebt() {
-        return crewMemberRepository.findByTotalKasbonGreaterThanOrderByNameAsc(BigDecimal.ZERO);
+        Long userId = currentUserContext.getCurrentUserId();
+        return crewMemberRepository.findByUserIdAndTotalKasbonGreaterThanOrderByNameAsc(userId, BigDecimal.ZERO);
     }
 
     @Transactional(readOnly = true)
     public CrewMember findById(Long id) {
-        return crewMemberRepository.findById(id)
+        Long userId = currentUserContext.getCurrentUserId();
+        return crewMemberRepository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Crew member not found with id: " + id));
     }
 
     @Transactional
     public CrewMember create(CrewMemberRequest request) {
+        User currentUser = currentUserContext.getCurrentUser();
         CrewMember crew = CrewMember.builder()
+                .user(currentUser)
                 .name(request.name().trim())
                 .role(request.role().trim())
                 .phone(request.phone() != null ? request.phone().trim() : null)
@@ -62,4 +70,3 @@ public class CrewMemberService {
         crewMemberRepository.delete(crew);
     }
 }
-

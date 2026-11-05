@@ -5,8 +5,10 @@ import com.fishcatch.backend.exception.ResourceNotFoundException;
 import com.fishcatch.backend.model.CrewMember;
 import com.fishcatch.backend.model.KasbonTransaction;
 import com.fishcatch.backend.model.KasbonTransactionType;
+import com.fishcatch.backend.model.User;
 import com.fishcatch.backend.repository.CrewMemberRepository;
 import com.fishcatch.backend.repository.KasbonTransactionRepository;
+import com.fishcatch.backend.security.CurrentUserContext;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -21,28 +23,33 @@ public class KasbonTransactionService {
 
     private final KasbonTransactionRepository kasbonRepository;
     private final CrewMemberRepository crewMemberRepository;
+    private final CurrentUserContext currentUserContext;
 
     @Transactional(readOnly = true)
     public List<KasbonTransaction> findAll(Long crewMemberId) {
+        Long userId = currentUserContext.getCurrentUserId();
         if (crewMemberId != null) {
-            return kasbonRepository.findByCrewMemberIdOrderByTransactionDateDescIdDesc(crewMemberId);
+            return kasbonRepository.findByUserIdAndCrewMemberIdOrderByTransactionDateDescIdDesc(userId, crewMemberId);
         }
-        return kasbonRepository.findAllByOrderByTransactionDateDescIdDesc();
+        return kasbonRepository.findByUserIdOrderByTransactionDateDescIdDesc(userId);
     }
 
     @Transactional(readOnly = true)
     public KasbonTransaction findById(Long id) {
-        return kasbonRepository.findById(id)
+        Long userId = currentUserContext.getCurrentUserId();
+        return kasbonRepository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Kasbon transaction not found with id: " + id));
     }
 
     @Transactional
     public KasbonTransaction create(KasbonTransactionRequest request) {
-        CrewMember crew = getCrewMember(request.crewMemberId());
+        User currentUser = currentUserContext.getCurrentUser();
+        CrewMember crew = getCrewMemberForCurrentUser(request.crewMemberId(), currentUser.getId());
         applyBalanceChange(crew, request.type(), request.amount());
         crewMemberRepository.save(crew);
 
         KasbonTransaction tx = KasbonTransaction.builder()
+                .user(currentUser)
                 .crewMember(crew)
                 .transactionDate(request.transactionDate())
                 .type(request.type())
@@ -54,6 +61,7 @@ public class KasbonTransactionService {
 
     @Transactional
     public KasbonTransaction update(Long id, KasbonTransactionRequest request) {
+        Long userId = currentUserContext.getCurrentUserId();
         KasbonTransaction existing = findById(id);
         if (existing.getTripExpenseId() != null) {
             throw new IllegalStateException(
@@ -67,7 +75,7 @@ public class KasbonTransactionService {
 
         CrewMember newCrew = oldCrew.getId().equals(request.crewMemberId())
                 ? oldCrew
-                : getCrewMember(request.crewMemberId());
+                : getCrewMemberForCurrentUser(request.crewMemberId(), userId);
 
         applyBalanceChange(newCrew, request.type(), request.amount());
         crewMemberRepository.save(newCrew);
@@ -105,6 +113,7 @@ public class KasbonTransactionService {
             BigDecimal deductionAmount,
             String description
     ) {
+        User currentUser = currentUserContext.getCurrentUser();
         Optional<KasbonTransaction> existingOpt = kasbonRepository.findByTripExpenseId(tripExpenseId);
         if (existingOpt.isPresent()) {
             KasbonTransaction existing = existingOpt.get();
@@ -114,10 +123,11 @@ public class KasbonTransactionService {
 
             CrewMember targetCrew = oldCrew.getId().equals(crewMemberId)
                     ? oldCrew
-                    : getCrewMember(crewMemberId);
+                    : getCrewMemberForCurrentUser(crewMemberId, currentUser.getId());
             applyBalanceChange(targetCrew, KasbonTransactionType.REPAYMENT, deductionAmount);
             crewMemberRepository.save(targetCrew);
 
+            existing.setUser(currentUser);
             existing.setCrewMember(targetCrew);
             existing.setTransactionDate(transactionDate);
             existing.setType(KasbonTransactionType.REPAYMENT);
@@ -125,11 +135,12 @@ public class KasbonTransactionService {
             existing.setDescription(description);
             return kasbonRepository.save(existing);
         } else {
-            CrewMember targetCrew = getCrewMember(crewMemberId);
+            CrewMember targetCrew = getCrewMemberForCurrentUser(crewMemberId, currentUser.getId());
             applyBalanceChange(targetCrew, KasbonTransactionType.REPAYMENT, deductionAmount);
             crewMemberRepository.save(targetCrew);
 
             KasbonTransaction created = KasbonTransaction.builder()
+                    .user(currentUser)
                     .crewMember(targetCrew)
                     .tripExpenseId(tripExpenseId)
                     .transactionDate(transactionDate)
@@ -151,8 +162,8 @@ public class KasbonTransactionService {
         });
     }
 
-    private CrewMember getCrewMember(Long crewMemberId) {
-        return crewMemberRepository.findById(crewMemberId)
+    private CrewMember getCrewMemberForCurrentUser(Long crewMemberId, Long userId) {
+        return crewMemberRepository.findByIdAndUserId(crewMemberId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Crew member not found with id: " + crewMemberId));
     }
 
@@ -190,4 +201,3 @@ public class KasbonTransactionService {
         }
     }
 }
-

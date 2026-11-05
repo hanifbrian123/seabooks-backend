@@ -2,8 +2,10 @@ package com.fishcatch.backend;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fishcatch.backend.dto.AuthResponse;
 import com.fishcatch.backend.dto.CrewMemberRequest;
 import com.fishcatch.backend.dto.KasbonTransactionRequest;
+import com.fishcatch.backend.dto.RegisterRequest;
 import com.fishcatch.backend.dto.TripExpenseRequest;
 import com.fishcatch.backend.dto.TripIncomeRequest;
 import com.fishcatch.backend.dto.TripRequest;
@@ -17,6 +19,8 @@ import com.fishcatch.backend.model.TripExpense;
 import com.fishcatch.backend.model.TripStatus;
 import com.fishcatch.backend.model.Vessel;
 import com.fishcatch.backend.model.VesselStatus;
+import com.fishcatch.backend.security.CurrentUserContext;
+import com.fishcatch.backend.service.AuthService;
 import com.fishcatch.backend.service.CrewMemberService;
 import com.fishcatch.backend.service.KasbonTransactionService;
 import com.fishcatch.backend.service.TripExpenseService;
@@ -26,12 +30,19 @@ import com.fishcatch.backend.service.VesselService;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
 class BackendApplicationTests {
+
+    @Autowired
+    private AuthService authService;
+
+    @Autowired
+    private CurrentUserContext currentUserContext;
 
     @Autowired
     private VesselService vesselService;
@@ -51,8 +62,21 @@ class BackendApplicationTests {
     @Autowired
     private TripExpenseService tripExpenseService;
 
+    @AfterEach
+    void tearDown() {
+        currentUserContext.clear();
+    }
+
     @Test
-    void fullTripAndKasbonDeductionWorkflowWorksCorrectly() {
+    void fullTripAndKasbonDeductionWorkflowAndUserIsolationWorksCorrectly() {
+        // 0. Register User A and set active session
+        AuthResponse userA = authService.register(new RegisterRequest(
+                "Juragan Andi",
+                "andi@fishcatch.com",
+                "password123"
+        ));
+        currentUserContext.setCurrentUserId(userA.user().getId());
+
         // 1. Create vessel
         Vessel vessel = vesselService.create(new VesselRequest(
                 "KM Samudra Jaya 01",
@@ -92,7 +116,7 @@ class BackendApplicationTests {
                 LocalDate.of(2026, 11, 2),
                 LocalDate.of(2026, 11, 5),
                 TripStatus.ONGOING,
-                " November fishing trip"
+                "November fishing trip"
         ));
 
         // 5. Add Trip Income (Fish Sales) of Rp 10,000,000
@@ -164,5 +188,17 @@ class BackendApplicationTests {
         tripExpenseService.delete(trip.id(), wageExpense.getId());
         assertThat(crewMemberService.findById(budi.getId()).getTotalKasbon())
                 .isEqualByComparingTo("500000");
+
+        // 10. Verify Multi-Account Data Isolation: Register User B -> sees 0 vessels, 0 crew, 0 trips
+        AuthResponse userB = authService.register(new RegisterRequest(
+                "Juragan Hasan",
+                "hasan@fishcatch.com",
+                "password123"
+        ));
+        currentUserContext.setCurrentUserId(userB.user().getId());
+        assertThat(vesselService.findAll()).isEmpty();
+        assertThat(crewMemberService.findAll()).isEmpty();
+        assertThat(tripService.findAll()).isEmpty();
+        assertThat(kasbonService.findAll(null)).isEmpty();
     }
 }
