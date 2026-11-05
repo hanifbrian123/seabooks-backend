@@ -65,3 +65,4 @@ public class Vessel {
         this.updatedAt = LocalDateTime.now();
     }
 }
+

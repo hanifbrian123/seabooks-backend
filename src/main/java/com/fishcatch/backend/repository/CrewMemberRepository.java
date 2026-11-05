@@ -10,3 +10,4 @@ public interface CrewMemberRepository extends JpaRepository<CrewMember, Long> {
 
     List<CrewMember> findByTotalKasbonGreaterThanOrderByNameAsc(BigDecimal amount);
 }
+

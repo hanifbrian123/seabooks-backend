@@ -56,3 +56,4 @@ public class VesselService {
         vesselRepository.delete(vessel);
     }
 }
+

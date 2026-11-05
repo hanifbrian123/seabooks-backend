@@ -69,3 +69,4 @@ public class CrewMember {
         this.updatedAt = LocalDateTime.now();
     }
 }
+
