@@ -12,3 +12,4 @@ public interface KasbonTransactionRepository extends JpaRepository<KasbonTransac
 
     Optional<KasbonTransaction> findByTripExpenseId(Long tripExpenseId);
 }
+

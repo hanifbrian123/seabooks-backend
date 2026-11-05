@@ -57,3 +57,4 @@ public class KasbonTransactionController {
         kasbonService.delete(id);
     }
 }
+

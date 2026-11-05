@@ -76,3 +76,4 @@ public class KasbonTransaction {
         this.updatedAt = LocalDateTime.now();
     }
 }
+

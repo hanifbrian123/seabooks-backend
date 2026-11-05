@@ -4,3 +4,4 @@ public enum KasbonTransactionType {
     LOAN,
     REPAYMENT
 }
+
