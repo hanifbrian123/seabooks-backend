@@ -104,17 +104,8 @@ public class AuthService {
             avatarUrl = userInfo.get("picture") != null
                     ? String.valueOf(userInfo.get("picture"))
                     : null;
-        } else if (request.email() != null && !request.email().isBlank()) {
-            email = request.email().trim().toLowerCase();
-            name = (request.name() != null && !request.name().isBlank())
-                    ? request.name().trim()
-                    : email.split("@")[0];
-            googleId = (request.googleId() != null && !request.googleId().isBlank())
-                    ? request.googleId().trim()
-                    : "google-" + email;
-            avatarUrl = request.avatarUrl();
         } else {
-            throw new IllegalArgumentException("Google authentication credential or email is required");
+            throw new IllegalArgumentException("Valid Google OAuth token is required");
         }
 
         User user = userRepository.findByGoogleId(googleId)
