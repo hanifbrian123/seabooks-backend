@@ -1,6 +1,6 @@
-# FishCatch Backend
+# SeaBooks Backend
 
-REST API for **FishCatch** — Fishing Fleet Management, Crew Cash Advances (*Kasbon*), and Trip Bookkeeping.
+REST API for **SeaBooks** — Fishing Fleet Management, Crew Cash Advances (*Kasbon*), and Trip Bookkeeping.
 
 ## Tech Stack
 - **Java 21** & **Spring Boot 4**
